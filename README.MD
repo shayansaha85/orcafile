@@ -1,6 +1,10 @@
-<p align="center">
-  <img src="docs/screenshot.png" alt="Orcafile — File Extension Organizer" width="800"/>
-</p>
+
+## 🎉 What's New in v1.0.1
+
+- **Dark / Light Theme Toggle**: Seamlessly switch between the original Nord dark theme and a brand new light theme. Your preference is saved automatically!
+- **File Selection & Bulk Deletion**: Select individual files or entire extension groups using checkboxes. Delete unwanted files directly from the application with a convenient confirmation dialog and success notifications.
+
+<br>
 
 <h1 align="center">🐋 Orcafile</h1>
 
@@ -9,13 +13,18 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/orcafile-1.0.1-blue" alt="Orcafile 1.0.1/>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+"/>
   <img src="https://img.shields.io/badge/PyQt6-6.x-41CD52?logo=qt&logoColor=white" alt="PyQt6"/>
   <img src="https://img.shields.io/badge/platform-Windows%20|%20macOS%20|%20Linux-blue" alt="Cross-platform"/>
   <img src="https://img.shields.io/badge/license-GPLv3-orange" alt="License GPLv3"/>
 </p>
 
----
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="Orcafile — File Extension Organizer" width="800"/>
+</p>
+
 
 ## 📖 Table of Contents
 
@@ -186,6 +195,8 @@ Contributions are welcome! Here's how to get started:
 
 This project is licensed under the **GNU General Public License v3.0** — see the [LICENSE](LICENSE) file for details.
 You are free to use, modify, and distribute this software under the terms of the GPLv3.
+
+
 
 ---
 

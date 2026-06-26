@@ -90,3 +90,27 @@ class ScanHandlersMixin:
 
         total_files = sum(len(v) for v in groups.values())
         self.top_stats_label.setText(f"{total_files} TOTAL FILES MAPPED")
+
+    def refresh_filter_counts(self):
+        """Update filter list item counts to reflect current all_data state.
+
+        Removes filter entries whose extension groups no longer exist.
+        """
+        self.filter_list.blockSignals(True)
+
+        items_to_remove = []
+        for i in range(self.filter_list.count()):
+            item = self.filter_list.item(i)
+            ext_name = item.text().strip().split("  (")[0]
+
+            if ext_name in self.all_data:
+                new_count = len(self.all_data[ext_name])
+                item.setText(f" {ext_name}  ({new_count})")
+            else:
+                items_to_remove.append(i)
+
+        # Remove from bottom to top so indices stay valid
+        for idx in reversed(items_to_remove):
+            self.filter_list.takeItem(idx)
+
+        self.filter_list.blockSignals(False)

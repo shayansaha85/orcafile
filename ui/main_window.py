@@ -1,13 +1,15 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLineEdit, QPushButton, QFileDialog, QTreeWidget,
-    QListWidget, QLabel, QSplitter, QProgressBar
+    QListWidget, QLabel, QSplitter, QProgressBar,
+    QCheckBox, QGraphicsOpacityEffect
 )
 
 from handlers import ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
-from ui.styles import NORD_STYLESHEET
+from ui.styles import get_stylesheet
+from ui.theme_manager import load_theme, save_theme
 
 
 class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin, QMainWindow):
@@ -26,6 +28,12 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         self.first_search_done = False
         self.solidified_selections = set()
         self._last_search_was_empty = True
+
+        # Theme state
+        self._current_theme = load_theme()
+
+        # Prevent recursive checkbox signals
+        self._block_tree_signals = False
 
         self.init_ui()
         self.apply_styles()
@@ -60,10 +68,17 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         self.top_stats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.top_stats_label.setFixedHeight(30)
 
+        self.theme_btn = QPushButton("☀️" if self._current_theme == "dark" else "🌙")
+        self.theme_btn.setObjectName("ThemeToggleButton")
+        self.theme_btn.setFixedHeight(30)
+        self.theme_btn.setToolTip("Toggle Light / Dark theme")
+        self.theme_btn.clicked.connect(self.toggle_theme)
+
         top_layout.addWidget(self.path_input, stretch=5)
         top_layout.addWidget(browse_btn)
         top_layout.addWidget(self.scan_btn)
         top_layout.addWidget(self.top_stats_label, stretch=3)
+        top_layout.addWidget(self.theme_btn)
         main_layout.addLayout(top_layout)
 
         # --- PROGRESS ANIMATION ---
@@ -90,7 +105,9 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(10)
 
-        sidebar_layout.addWidget(QLabel("<b style='color: #D8DEE9; font-size: 13px;'>FILTER CHANNELS</b>"))
+        self.filter_title_label = QLabel("FILTER CHANNELS")
+        self.filter_title_label.setObjectName("FilterTitle")
+        sidebar_layout.addWidget(self.filter_title_label)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search extensions (e.g. .pdf)...")
@@ -128,6 +145,16 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         self.file_search_input.setFixedHeight(28)
         self.file_search_input.textChanged.connect(self.filter_file_tree)
 
+        self.select_all_checkbox = QCheckBox("Select All")
+        self.select_all_checkbox.setFixedHeight(26)
+        self.select_all_checkbox.stateChanged.connect(self.toggle_select_all_files)
+
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.setObjectName("DeleteButton")
+        self.delete_btn.setFixedHeight(26)
+        self.delete_btn.setEnabled(False)
+        self.delete_btn.clicked.connect(self.confirm_and_delete_selected)
+
         expand_btn = QPushButton("Expand All")
         collapse_btn = QPushButton("Collapse All")
         expand_btn.setFixedHeight(26)
@@ -137,6 +164,8 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         collapse_btn.clicked.connect(lambda: self.tree_view.collapseAll())
 
         file_ctrl_layout.addWidget(self.file_search_input, stretch=3)
+        file_ctrl_layout.addWidget(self.select_all_checkbox)
+        file_ctrl_layout.addWidget(self.delete_btn)
         file_ctrl_layout.addWidget(expand_btn)
         file_ctrl_layout.addWidget(collapse_btn)
         main_content_layout.addLayout(file_ctrl_layout)
@@ -145,6 +174,7 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         self.tree_view.setHeaderLabels(["Extension Tree Directory", "Target Destination Path"])
         self.tree_view.setColumnWidth(0, 400)
         self.tree_view.itemDoubleClicked.connect(self.open_file_location)
+        self.tree_view.itemChanged.connect(self.handle_tree_item_changed)
         main_content_layout.addWidget(self.tree_view)
 
         splitter.addWidget(sidebar_container)
@@ -158,4 +188,51 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
             self.path_input.setText(selected_dir)
 
     def apply_styles(self):
-        self.setStyleSheet(NORD_STYLESHEET)
+        self.setStyleSheet(get_stylesheet(self._current_theme))
+
+    def toggle_theme(self):
+        """Switch between dark and light themes and persist the choice."""
+        if self._current_theme == "dark":
+            self._current_theme = "light"
+            self.theme_btn.setText("🌙")
+        else:
+            self._current_theme = "dark"
+            self.theme_btn.setText("☀️")
+
+        save_theme(self._current_theme)
+        self.apply_styles()
+
+    # ── Toast notification ──────────────────────────────────
+
+    def show_toast(self, message: str, is_error: bool = False, duration_ms: int = 3000):
+        """Show a temporary toast notification at the bottom of the window."""
+        toast = QLabel(message, self)
+        toast.setObjectName("ToastError" if is_error else "ToastLabel")
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet(get_stylesheet(self._current_theme))
+        toast.adjustSize()
+
+        # Position at bottom-center
+        toast_width = max(toast.sizeHint().width() + 40, 280)
+        toast_height = toast.sizeHint().height() + 12
+        x = (self.width() - toast_width) // 2
+        y = self.height() - toast_height - 30
+        toast.setFixedSize(toast_width, toast_height)
+        toast.move(x, y)
+        toast.show()
+        toast.raise_()
+
+        # Fade-out animation
+        opacity_effect = QGraphicsOpacityEffect(toast)
+        toast.setGraphicsEffect(opacity_effect)
+        opacity_effect.setOpacity(1.0)
+
+        fade_anim = QPropertyAnimation(opacity_effect, b"opacity", toast)
+        fade_anim.setDuration(500)
+        fade_anim.setStartValue(1.0)
+        fade_anim.setEndValue(0.0)
+        fade_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        fade_anim.finished.connect(toast.deleteLater)
+
+        # Start fading after the visible duration
+        QTimer.singleShot(duration_ms, fade_anim.start)
