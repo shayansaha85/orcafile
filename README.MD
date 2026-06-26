@@ -22,7 +22,7 @@
 
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Orcafile — File Extension Organizer" width="800"/>
+  <img src="docs/orcafile_v1.0.1_snapshot.png" alt="Orcafile — File Extension Organizer" width="800"/>
 </p>
 
 
