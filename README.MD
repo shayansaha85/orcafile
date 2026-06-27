@@ -6,7 +6,11 @@
 
 <br>
 
-<h1 align="center">🐋 Orcafile</h1>
+<p align="center">
+  <img src="logo.ico" alt="Orcafile Logo" width="140">
+</p>
+
+<h1 align="center">Orcafile</h1>
 
 <p align="center">
   <b>A fast, lightweight desktop app that scans any folder or drive and instantly groups every file by its extension.</b>
