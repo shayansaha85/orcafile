@@ -14,7 +14,7 @@ if __name__ == "__main__":
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon("logo.ico"))
+    app.setWindowIcon(QIcon("orcafile_logo.ico"))
 
     window = FileOrganizerApp()
     window.show()

@@ -18,9 +18,6 @@ The core logic and multi-threaded backend of OrcaFile are powered by the **Pytho
 * **Developed by:** Python Software Foundation
 * **Website:** [https://www.python.org/](https://www.python.org/)
 
-### Logo Credits
-* <a href="https://www.flaticon.com/free-icons/whale" title="whale icons">Whale icons created by BZZRINCANTATION - Flaticon</a>
-
 
 ---
 *OrcaFile is released under the GNU General Public License v3 (GPLv3) in strict accordance with the licensing requirements of PyQt6. We thank the maintainers of these tools for making software development accessible and powerful.*
