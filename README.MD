@@ -210,5 +210,5 @@ You are free to use, modify, and distribute this software under the terms of the
 ---
 
 <p align="center">
-  Made with ❤️ and PyQt6
+  Made with ❤️ and PyQt6 | <a href="https://www.flaticon.com/free-icons/whale" title="whale icons">Whale icons created by BZZRINCANTATION - Flaticon</a>
 </p>

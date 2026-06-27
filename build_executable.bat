@@ -1,0 +1,1 @@
+pyinstaller  --noconsole --icon=logo.ico orcafile_main.py

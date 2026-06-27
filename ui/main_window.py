@@ -18,7 +18,7 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Orcafile")
-        self.setWindowIcon(QIcon("icon.ico"))
+        self.setWindowIcon(QIcon("logo.ico"))
         self.setGeometry(100, 100, 1100, 720)
 
         self.all_data = {}

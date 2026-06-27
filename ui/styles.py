@@ -2,7 +2,7 @@
 
 import os
 
-# Compute absolute path to SVG icons (project root, alongside icon.ico).
+# Compute absolute path to SVG icons (project root, alongside logo.ico).
 # Use forward slashes for QSS url() compatibility on all platforms.
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace("\\", "/")
 _CHECK_ICON = f"{_PROJECT_ROOT}/check.svg"
