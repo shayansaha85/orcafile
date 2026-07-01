@@ -171,8 +171,9 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         main_content_layout.addLayout(file_ctrl_layout)
 
         self.tree_view = QTreeWidget()
-        self.tree_view.setHeaderLabels(["Extension Tree Directory", "Target Destination Path"])
-        self.tree_view.setColumnWidth(0, 400)
+        self.tree_view.setHeaderLabels(["Extension Tree Directory", "Target Destination Path", "Size"])
+        self.tree_view.setColumnWidth(0, 350)
+        self.tree_view.setColumnWidth(2, 90)
         self.tree_view.itemDoubleClicked.connect(self.open_file_location)
         self.tree_view.itemChanged.connect(self.handle_tree_item_changed)
         main_content_layout.addWidget(self.tree_view)

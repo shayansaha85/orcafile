@@ -6,6 +6,17 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTreeWidgetItem, QMessageBox
 
 
+def format_size(size_bytes: int) -> str:
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 ** 2:
+        return f"{size_bytes / 1024:.1f} KB"
+    elif size_bytes < 1024 ** 3:
+        return f"{size_bytes / (1024 ** 2):.1f} MB"
+    else:
+        return f"{size_bytes / (1024 ** 3):.2f} GB"
+
+
 class TreeHandlersMixin:
     """Mixin providing tree view event handlers for FileOrganizerApp."""
 
@@ -25,12 +36,13 @@ class TreeHandlersMixin:
             if ext not in enabled_extensions:
                 continue
 
-            parent_node = QTreeWidgetItem(self.tree_view, [f" {ext.upper()} Group ({len(file_list)} items)"])
+            group_size = sum(s for _, _, s in file_list)
+            parent_node = QTreeWidgetItem(self.tree_view, [f" {ext.upper()} Group ({len(file_list)} items)", "", format_size(group_size)])
             parent_node.setFlags(parent_node.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             parent_node.setCheckState(0, Qt.CheckState.Unchecked)
 
-            for name, path in file_list:
-                child = QTreeWidgetItem(parent_node, [name, path])
+            for name, path, size in file_list:
+                child = QTreeWidgetItem(parent_node, [name, path, format_size(size)])
                 child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 child.setCheckState(0, Qt.CheckState.Unchecked)
 
@@ -177,7 +189,7 @@ class TreeHandlersMixin:
                 # Remove from self.all_data
                 if ext in self.all_data:
                     self.all_data[ext] = [
-                        (n, p) for n, p in self.all_data[ext]
+                        (n, p, s) for n, p, s in self.all_data[ext]
                         if p != full_path
                     ]
                     # Remove the extension group entirely if empty
