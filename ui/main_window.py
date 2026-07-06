@@ -35,6 +35,9 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         # Prevent recursive checkbox signals
         self._block_tree_signals = False
 
+        # Size sort direction (False = descending, largest first)
+        self._sort_ascending = False
+
         self.init_ui()
         self.apply_styles()
 
@@ -163,11 +166,17 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         expand_btn.clicked.connect(lambda: self.tree_view.expandAll())
         collapse_btn.clicked.connect(lambda: self.tree_view.collapseAll())
 
+        self.sort_order_btn = QPushButton("Size ▼")
+        self.sort_order_btn.setFixedHeight(26)
+        self.sort_order_btn.setToolTip("Toggle sort order (largest/smallest first)")
+        self.sort_order_btn.clicked.connect(self.toggle_sort_order)
+
         file_ctrl_layout.addWidget(self.file_search_input, stretch=3)
         file_ctrl_layout.addWidget(self.select_all_checkbox)
         file_ctrl_layout.addWidget(self.delete_btn)
         file_ctrl_layout.addWidget(expand_btn)
         file_ctrl_layout.addWidget(collapse_btn)
+        file_ctrl_layout.addWidget(self.sort_order_btn)
         main_content_layout.addLayout(file_ctrl_layout)
 
         self.tree_view = QTreeWidget()

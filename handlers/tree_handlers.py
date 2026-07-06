@@ -32,7 +32,16 @@ class TreeHandlersMixin:
 
         self._block_tree_signals = True
 
-        for ext, file_list in sorted(self.all_data.items()):
+        # Sorted by total size, same convention as ntfs_scanner.navigator.list_folder
+        # (TreeSize-style view) — direction toggled via self._sort_ascending.
+        descending = not self._sort_ascending
+        groups_by_size = sorted(
+            self.all_data.items(),
+            key=lambda kv: sum(s for _, _, s in kv[1]),
+            reverse=descending
+        )
+
+        for ext, file_list in groups_by_size:
             if ext not in enabled_extensions:
                 continue
 
@@ -41,7 +50,7 @@ class TreeHandlersMixin:
             parent_node.setFlags(parent_node.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             parent_node.setCheckState(0, Qt.CheckState.Unchecked)
 
-            for name, path, size in file_list:
+            for name, path, size in sorted(file_list, key=lambda f: f[2], reverse=descending):
                 child = QTreeWidgetItem(parent_node, [name, path, format_size(size)])
                 child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 child.setCheckState(0, Qt.CheckState.Unchecked)
@@ -54,6 +63,12 @@ class TreeHandlersMixin:
             self.filter_file_tree(self.file_search_input.text())
 
         self.update_delete_button_state()
+
+    def toggle_sort_order(self):
+        """Flip the size sort direction and re-render the tree."""
+        self._sort_ascending = not self._sort_ascending
+        self.sort_order_btn.setText("Size ▲" if self._sort_ascending else "Size ▼")
+        self.populate_tree_view()
 
     def handle_tree_item_changed(self, item, column):
         """Handle checkbox changes — propagate group ↔ child states."""
