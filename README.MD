@@ -1,3 +1,8 @@
+## 🎉 What's New in v1.0.2
+
+- **File sorting based on size**: Now sort your files based on their sizes in the orcafile UI, and delete unwanted large files.
+
+![sortBasedOnSize](docs/sortBasedOnStart.png)
 
 ## 🎉 What's New in v1.0.1
 
