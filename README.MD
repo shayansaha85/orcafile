@@ -78,6 +78,7 @@ Run the installer and follow the setup wizard. It will install Orcafile to your 
 - Python 3.10 or higher
 - pip (Python package manager)
 
+
 **Steps:**
 
 ```bash
