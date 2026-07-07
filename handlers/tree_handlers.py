@@ -6,6 +6,17 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTreeWidgetItem, QMessageBox
 
 
+def format_size(size_bytes: int) -> str:
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 ** 2:
+        return f"{size_bytes / 1024:.1f} KB"
+    elif size_bytes < 1024 ** 3:
+        return f"{size_bytes / (1024 ** 2):.1f} MB"
+    else:
+        return f"{size_bytes / (1024 ** 3):.2f} GB"
+
+
 class TreeHandlersMixin:
     """Mixin providing tree view event handlers for FileOrganizerApp."""
 
@@ -21,16 +32,26 @@ class TreeHandlersMixin:
 
         self._block_tree_signals = True
 
-        for ext, file_list in sorted(self.all_data.items()):
+        # Sorted by total size, same convention as ntfs_scanner.navigator.list_folder
+        # (TreeSize-style view) — direction toggled via self._sort_ascending.
+        descending = not self._sort_ascending
+        groups_by_size = sorted(
+            self.all_data.items(),
+            key=lambda kv: sum(s for _, _, s in kv[1]),
+            reverse=descending
+        )
+
+        for ext, file_list in groups_by_size:
             if ext not in enabled_extensions:
                 continue
 
-            parent_node = QTreeWidgetItem(self.tree_view, [f" {ext.upper()} Group ({len(file_list)} items)"])
+            group_size = sum(s for _, _, s in file_list)
+            parent_node = QTreeWidgetItem(self.tree_view, [f" {ext.upper()} Group ({len(file_list)} items)", "", format_size(group_size)])
             parent_node.setFlags(parent_node.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             parent_node.setCheckState(0, Qt.CheckState.Unchecked)
 
-            for name, path in file_list:
-                child = QTreeWidgetItem(parent_node, [name, path])
+            for name, path, size in sorted(file_list, key=lambda f: f[2], reverse=descending):
+                child = QTreeWidgetItem(parent_node, [name, path, format_size(size)])
                 child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 child.setCheckState(0, Qt.CheckState.Unchecked)
 
@@ -42,6 +63,12 @@ class TreeHandlersMixin:
             self.filter_file_tree(self.file_search_input.text())
 
         self.update_delete_button_state()
+
+    def toggle_sort_order(self):
+        """Flip the size sort direction and re-render the tree."""
+        self._sort_ascending = not self._sort_ascending
+        self.sort_order_btn.setText("Size ▲" if self._sort_ascending else "Size ▼")
+        self.populate_tree_view()
 
     def handle_tree_item_changed(self, item, column):
         """Handle checkbox changes — propagate group ↔ child states."""
@@ -177,7 +204,7 @@ class TreeHandlersMixin:
                 # Remove from self.all_data
                 if ext in self.all_data:
                     self.all_data[ext] = [
-                        (n, p) for n, p in self.all_data[ext]
+                        (n, p, s) for n, p, s in self.all_data[ext]
                         if p != full_path
                     ]
                     # Remove the extension group entirely if empty
