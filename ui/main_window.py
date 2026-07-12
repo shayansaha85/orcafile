@@ -156,6 +156,7 @@ class FileOrganizerApp(ScanHandlersMixin, FilterHandlersMixin, TreeHandlersMixin
         self.delete_btn.setObjectName("DeleteButton")
         self.delete_btn.setFixedHeight(26)
         self.delete_btn.setEnabled(False)
+        self.delete_btn.setToolTip("Delete selected files (choose Recycle Bin or permanent)")
         self.delete_btn.clicked.connect(self.confirm_and_delete_selected)
 
         expand_btn = QPushButton("Expand All")

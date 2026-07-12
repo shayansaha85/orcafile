@@ -100,8 +100,8 @@ venv\Scripts\activate
 # macOS / Linux
 source venv/bin/activate
 
-# 3. Install the only dependency
-pip install PyQt6
+# 3. Install dependencies
+pip install PyQt6 Send2Trash
 
 # 4. Launch the app
 python orcafile_main.py

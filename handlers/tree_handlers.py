@@ -4,6 +4,8 @@ import subprocess
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QTreeWidgetItem, QMessageBox
+from send2trash import send2trash
+from send2trash.exceptions import TrashPermissionError
 
 
 def format_size(size_bytes: int) -> str:
@@ -169,33 +171,43 @@ class TreeHandlersMixin:
         return selected
 
     def confirm_and_delete_selected(self):
-        """Show confirmation dialog and delete selected files if user confirms."""
+        """Ask the user whether to recycle or permanently delete the selection."""
         selected = self.get_selected_files()
         if not selected:
             return
 
-        reply = QMessageBox.question(
-            self,
-            "Confirm Deletion",
-            "Do you really want to delete?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle("Confirm Deletion")
+        msg_box.setText(f"Delete {len(selected)} selected file(s)?")
 
-        if reply == QMessageBox.StandardButton.No:
-            return
+        recycle_btn = msg_box.addButton("Move to Recycle Bin", QMessageBox.ButtonRole.AcceptRole)
+        permanent_btn = msg_box.addButton("Delete Permanently", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_btn = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        msg_box.setDefaultButton(recycle_btn)
+        msg_box.setEscapeButton(cancel_btn)
 
-        self.delete_selected_files(selected)
+        msg_box.exec()
+        clicked = msg_box.clickedButton()
 
-    def delete_selected_files(self, selected):
-        """Delete files from disk and update internal data structures."""
+        if clicked is recycle_btn:
+            self.delete_selected_files(selected, permanent=False)
+        elif clicked is permanent_btn:
+            self.delete_selected_files(selected, permanent=True)
+        # Cancel — do nothing
+
+    def delete_selected_files(self, selected, permanent=False):
+        """Remove files from disk (recycled or permanent) and update internal data structures."""
         deleted_count = 0
         error_count = 0
 
         for ext, filename, full_path in selected:
             try:
                 if os.path.exists(full_path):
-                    os.remove(full_path)
+                    if permanent:
+                        os.remove(full_path)
+                    else:
+                        send2trash(full_path)
                     deleted_count += 1
                 else:
                     # File already gone — still remove from data
@@ -211,9 +223,7 @@ class TreeHandlersMixin:
                     if not self.all_data[ext]:
                         del self.all_data[ext]
 
-            except PermissionError:
-                error_count += 1
-            except OSError:
+            except (PermissionError, TrashPermissionError, OSError):
                 error_count += 1
 
         # Refresh filter counts and tree
@@ -225,11 +235,13 @@ class TreeHandlersMixin:
         self.top_stats_label.setText(f"{total_files} TOTAL FILES MAPPED")
 
         # Show result toast
+        action_done = "permanently deleted" if permanent else "moved to Recycle Bin"
+        action_failed = "delete" if permanent else "move"
         if error_count == 0:
-            self.show_toast(f"✓  {deleted_count} file(s) deleted successfully")
+            self.show_toast(f"✓  {deleted_count} file(s) {action_done}")
         else:
             self.show_toast(
-                f"Deleted {deleted_count}, failed {error_count} (permission denied)",
+                f"{action_done.capitalize()}: {deleted_count}, failed to {action_failed}: {error_count} (permission denied)",
                 is_error=True
             )
 
